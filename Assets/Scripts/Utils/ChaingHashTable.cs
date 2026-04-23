@@ -75,6 +75,7 @@ public class ChaingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
             if (bucket.Equals(key)) return;
         }
         _hashTable[hash].AddLast(new Bucket(key, value));
+        _count++;
     }
 
     public void Clear() => Initialize();
@@ -115,6 +116,7 @@ public class ChaingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
     public bool Remove(TKey key)
     {
         // TODO: 아이템 제거 구현
+        _count--;
         throw new System.NotImplementedException();
     }
 
