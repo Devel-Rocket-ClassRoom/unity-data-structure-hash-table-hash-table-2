@@ -4,10 +4,17 @@ using UnityEngine;
 
 public class ChaingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
 {
-    private struct Bucket
+    private class Bucket
     {
-        public TKey key;
+        public TKey Key;
         public TValue Value;
+
+        public Bucket(TKey key) : this(key, default) { }
+        public Bucket(TKey key, TValue value)
+        {
+            Key = key;
+            Value = value;
+        }
     }
 
     private LinkedList<Bucket>[] _hashTable;
@@ -59,12 +66,16 @@ public class ChaingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
         return (hash & 0x7fffffff) % _hashTable.Length;
     }
 
+    public void Add(KeyValuePair<TKey, TValue> item) => Add(item.Key, item.Value);
     public void Add(TKey key, TValue value)
     {
-        // TODO: 아이템 추가 구현
+        int hash = GetHash(key);
+        foreach (var bucket in _hashTable[hash])
+        {
+            if (bucket.Equals(key)) return;
+        }
+        _hashTable[hash].AddLast(new Bucket(key, value));
     }
-
-    public void Add(KeyValuePair<TKey, TValue> item) => Add(item.Key, item.Value);
 
     public void Clear() => Initialize();
 
@@ -87,7 +98,7 @@ public class ChaingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
         {
             foreach (var bucket in item)
             {
-                yield return new(bucket.key, bucket.Value);
+                yield return new(bucket.Key, bucket.Value);
             }
         }
     }
