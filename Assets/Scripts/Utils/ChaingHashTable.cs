@@ -1,0 +1,125 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class ChaingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
+{
+    private struct Bucket
+    {
+        public TKey key;
+        public TValue Value;
+    }
+
+    private LinkedList<Bucket>[] _hashTable;
+
+    public TValue this[TKey key]
+    {
+        get
+        {
+            var result = default(TValue);
+            foreach (var value in _hashTable)
+            {
+                // TODO: 인덱서 Get 구현
+            }
+            return result;
+        }
+        set
+        {
+            // TODO: 인덱서 Set 구현
+        }
+    }
+
+    public ICollection<TKey> Keys { get; }
+    public ICollection<TValue> Values { get; }
+
+    public const int k_InitializeSize = 16;
+    private int _count = 0;
+    public int Count => _count;
+    public int Capacity => _hashTable.Length;
+
+    bool ICollection<KeyValuePair<TKey, TValue>>.IsReadOnly { get; }
+
+    public ChaingHashTable()
+    {
+        Initialize();
+    }
+
+    private void Initialize()
+    {
+        _hashTable = new LinkedList<Bucket>[Mathf.Max(Capacity, k_InitializeSize)];
+        for (int i = 0; i < Capacity; i++)
+        {
+            _hashTable[i] = new();
+        }
+    }
+
+    public int GetHash(TKey key)
+    {
+        int hash = key.GetHashCode();
+        return (hash & 0x7fffffff) % _hashTable.Length;
+    }
+
+    public void Add(TKey key, TValue value)
+    {
+        // TODO: 아이템 추가 구현
+    }
+
+    public void Add(KeyValuePair<TKey, TValue> item) => Add(item.Key, item.Value);
+
+    public void Clear() => Initialize();
+
+    public bool Contains(KeyValuePair<TKey, TValue> item)
+    {
+        if (TryGetValue(item.Key, out TValue value)) return false;
+        return value.Equals(item.Value);
+    }
+
+    public bool ContainsKey(TKey key) => TryGetValue(key, out _);
+
+    public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
+    {
+        // TODO: 해시테이블? 복사 구현
+    }
+
+    public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
+    {
+        foreach (var item in _hashTable)
+        {
+            foreach (var bucket in item)
+            {
+                yield return new(bucket.key, bucket.Value);
+            }
+        }
+    }
+
+    // public IEnumerable<(int Index, LinkedList<Bucket> Chain)> EnumerateBuckets()
+    // {
+    //     for (int i = 0; i < _hashTable.Length; i++)
+    //     {
+    //         yield return (i, _hashTable[i]);
+    //     }
+    // }
+
+    public bool Remove(KeyValuePair<TKey, TValue> item) => Remove(item.Key);
+    public bool Remove(TKey key)
+    {
+        // TODO: 아이템 제거 구현
+        throw new System.NotImplementedException();
+    }
+
+    public bool TryGetValue(TKey key, out TValue value)
+    {
+        foreach (var bucket in _hashTable[GetHash(key)])
+        {
+            if (bucket.Equals(key))
+            {
+                value = bucket.Value;
+                return true;
+            }
+        }
+        value = default;
+        return false;
+    }
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+}
