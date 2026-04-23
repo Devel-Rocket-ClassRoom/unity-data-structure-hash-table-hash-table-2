@@ -44,8 +44,36 @@ public class ChaingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
         }
     }
 
-    public ICollection<TKey> Keys { get; }
-    public ICollection<TValue> Values { get; }
+    public ICollection<TKey> Keys
+    {
+        get
+        {
+            List<TKey> keys = new();
+            foreach (var buckets in _hashTable)
+            {
+                foreach (var item in buckets)
+                {
+                    keys.Add(item.Key);
+                }
+            }
+            return keys;
+        }
+    }
+    public ICollection<TValue> Values
+    {
+        get
+        {
+            List<TValue> values = new();
+            foreach (var buckets in _hashTable)
+            {
+                foreach (var item in buckets)
+                {
+                    values.Add(item.Value);
+                }
+            }
+            return values;
+        }
+    }
 
     public const int k_InitializeSize = 16;
     private int _count = 0;
@@ -94,9 +122,9 @@ public class ChaingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
 
     public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
     {
-        foreach (var item in _hashTable)
+        foreach (var buckets in _hashTable)
         {
-            foreach (var bucket in item)
+            foreach (var bucket in buckets)
             {
                 yield return new(bucket.Key, bucket.Value);
             }
