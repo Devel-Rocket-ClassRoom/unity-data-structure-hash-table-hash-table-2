@@ -67,6 +67,7 @@ crashlytics-build.properties
 
 # IDE 캐시 디렉토리
 .vs/
+.vsconfig/
 .vscode/
 .gradle/
 .idea/
