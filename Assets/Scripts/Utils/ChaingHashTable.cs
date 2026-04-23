@@ -2,8 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-using UnityEngine;
-
 public class ChaingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
 {
     private class Bucket
@@ -116,9 +114,18 @@ public class ChaingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
     public bool Remove(KeyValuePair<TKey, TValue> item) => Remove(item.Key);
     public bool Remove(TKey key)
     {
-        // TODO: 아이템 제거 구현
-        _count--;
-        throw new System.NotImplementedException();
+        if (key == null) throw new ArgumentNullException();
+
+        foreach (var bucket in _hashTable[GetHash(key)])
+        {
+            if (bucket.Key.Equals(key))
+            {
+                _hashTable[GetHash(key)].Remove(bucket);
+                _count--;
+                return true;
+            }
+        }
+        return false;
     }
 
     public bool TryGetValue(TKey key, out TValue value)
@@ -138,5 +145,4 @@ public class ChaingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
     }
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
 }
