@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+
 using UnityEngine;
 
 public class ChaingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
@@ -23,16 +25,24 @@ public class ChaingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
     {
         get
         {
-            var result = default(TValue);
-            foreach (var value in _hashTable)
-            {
-                // TODO: 인덱서 Get 구현
-            }
-            return result;
+            if (!TryGetValue(key, out TValue value)) throw new KeyNotFoundException();
+            return value;
         }
         set
         {
-            // TODO: 인덱서 Set 구현
+            if (key == null || value == null) throw new ArgumentNullException();
+
+            int hash = GetHash(key);
+            foreach (var bucket in _hashTable[hash])
+            {
+                if (bucket.Key.Equals(key))
+                {
+                    bucket.Value = value; // 덮어 쓰기로 약속
+                    return;
+                }
+            }
+            _hashTable[hash].AddLast(new Bucket(key, value));
+            _count++;
         }
     }
 
@@ -53,7 +63,7 @@ public class ChaingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
 
     private void Initialize()
     {
-        _hashTable = new LinkedList<Bucket>[Mathf.Max(Capacity, k_InitializeSize)];
+        _hashTable = new LinkedList<Bucket>[_hashTable?.Length ?? k_InitializeSize];
         for (int i = 0; i < Capacity; i++)
         {
             _hashTable[i] = new();
@@ -66,23 +76,14 @@ public class ChaingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
         return (hash & 0x7fffffff) % _hashTable.Length;
     }
 
-    public void Add(KeyValuePair<TKey, TValue> item) => Add(item.Key, item.Value);
-    public void Add(TKey key, TValue value)
-    {
-        int hash = GetHash(key);
-        foreach (var bucket in _hashTable[hash])
-        {
-            if (bucket.Equals(key)) return;
-        }
-        _hashTable[hash].AddLast(new Bucket(key, value));
-        _count++;
-    }
+    public void Add(KeyValuePair<TKey, TValue> item) => this[item.Key] = item.Value;
+    public void Add(TKey key, TValue value) => this[key] = value;
 
     public void Clear() => Initialize();
 
     public bool Contains(KeyValuePair<TKey, TValue> item)
     {
-        if (TryGetValue(item.Key, out TValue value)) return false;
+        if (!TryGetValue(item.Key, out TValue value)) return false;
         return value.Equals(item.Value);
     }
 
@@ -122,9 +123,11 @@ public class ChaingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
 
     public bool TryGetValue(TKey key, out TValue value)
     {
+        if (key == null) throw new ArgumentNullException();
+
         foreach (var bucket in _hashTable[GetHash(key)])
         {
-            if (bucket.Equals(key))
+            if (bucket.Key.Equals(key))
             {
                 value = bucket.Value;
                 return true;
@@ -135,4 +138,5 @@ public class ChaingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
     }
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
 }
