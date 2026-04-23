@@ -69,6 +69,7 @@ crashlytics-build.properties
 .vs/
 .vscode/
 .gradle/
+.idea/
 
 # Rider 플러그인 자동 생성
 **/[Aa]ssets/Plugins/Editor/JetBrains*
