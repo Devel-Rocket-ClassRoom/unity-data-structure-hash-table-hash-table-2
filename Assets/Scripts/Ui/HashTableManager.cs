@@ -1,4 +1,4 @@
-using TMPro;
+ï»¿using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,7 +7,7 @@ public enum ProbingType { Linear, Quadratic, DoubleHash }
 
 public class HashTableManager : MonoBehaviour
 {
-    public HashTableUi uiVisualizer;
+    public HashTableUi hashTable;
 
     public TMP_Dropdown tableDropdown;
     public TMP_Dropdown probingDropdown;
@@ -19,80 +19,127 @@ public class HashTableManager : MonoBehaviour
     public Button removeButton;
     public Button clearButton;
 
-    private int currentCapacity = 16;
+    public int initalCapacity;
+    private int currentCapacity;
+
     private TableType currentTableType;
     private ProbingType currentProbingType;
-
     // private SimpleHashTable<string, string> simpleTable;
     // private ChainingHashTable<string, string> chainingTable;
-    // private OpenAddressingHashTable<string, string> openAddressingTable;
+    private OpenAddressingHashTable<int, int> openAddressingTable;
 
     void Start()
     {
-        // 1. µå·Ó´Ù¿î ÃÊ±â°ª ¼³Á¤ ¹× ÀÌº¥Æ® ¿¬°á
+        currentCapacity = initalCapacity;
+
         tableDropdown.onValueChanged.AddListener(OnTableTypeChanged);
         probingDropdown.onValueChanged.AddListener(OnProbingTypeChanged);
 
-        // 2. ¹öÆ° ÀÌº¥Æ® ¿¬°á
         addButton.onClick.AddListener(OnAddClicked);
         removeButton.onClick.AddListener(OnRemoveClicked);
         clearButton.onClick.AddListener(OnClearClicked);
 
-        // 3. ÃÊ±â È­¸é »ı¼º
-        OnTableTypeChanged(0);
+        // 3. ì´ˆê¸° í™”ë©´ ìƒì„±
+        OnTableTypeChanged(2);
     }
 
-    // µå·Ó´Ù¿î 1: Å×ÀÌºí Á¾·ù ¼±ÅÃ
     public void OnTableTypeChanged(int index)
     {
         currentTableType = (TableType)index;
 
-        // OpenAddressingÀÏ ¶§¸¸ Probing µå·Ó´Ù¿î È°¼ºÈ­
         probingDropdown.interactable = (currentTableType == TableType.OpenAddressing);
 
-        // Å×ÀÌºí Á¾·ù¸¦ ¹Ù²ãµµ currentCapacity´Â À¯ÁöÇÏ¸ç UI ÃÊ±âÈ­
-        uiVisualizer.InitializeTable(currentCapacity);
+        switch (currentTableType)
+        {
+            case TableType.OpenAddressing:
+                openAddressingTable = new OpenAddressingHashTable<int, int>();
+                break;
+        }
 
-        // TODO: ÆÀ¿øÀÇ ÇØ½Ã Å×ÀÌºí Å¬·¡½ºµµ »õ·Ó°Ô ÀÎ½ºÅÏ½ºÈ­ (currentCapacity Àü´Ş)
-        Debug.Log($"{currentTableType} Å×ÀÌºí·Î ÀüÈ¯. Å©±â: {currentCapacity}");
+        hashTable.InitializeTable(currentCapacity);
+
+        Debug.Log($"{currentTableType} í…Œì´ë¸”ë¡œ ì „í™˜. í¬ê¸°: {currentCapacity}");
     }
 
-    // µå·Ó´Ù¿î 2: ÇÁ·Îºù ¹æ½Ä ¼±ÅÃ
     public void OnProbingTypeChanged(int index)
     {
         currentProbingType = (ProbingType)index;
-        Debug.Log($"ÇÁ·Îºù ¹æ½Ä º¯°æ: {currentProbingType}");
+        Debug.Log($"í”„ë¡œë¹™ ë°©ì‹ ë³€ê²½: {currentProbingType}");
+        UpdateUI();
     }
 
     private void OnAddClicked()
     {
-        string k = keyInput.text;
-        string v = valueInput.text;
+        int key = 0;
+        int value = 0;
 
-        if (string.IsNullOrEmpty(k)) return;
+        if (keyInput != null && !(int.TryParse(keyInput.text, out key) || !int.TryParse(valueInput.text, out value)))
+        {
+            Debug.Log("Keyì™€ Valueì— ìˆ«ìë¥¼ ì…ë ¥í•˜ì„¸ìš”.");
+            return;
+        }
 
-        // [Èå¸§ ¿¹½Ã]
-        // 1. ÆÀ¿ø ·ÎÁ÷ È£Ãâ: int index = currentTable.GetHashIndex(k);
-        // 2. °¡»ó ÀÎµ¦½º Å×½ºÆ® (¿¹½Ã·Î 5¹ø ÀÎµ¦½º¶ó°í °¡Á¤)
-        int targetIndex = Random.Range(0, currentCapacity);
-        bool isChaining = (currentTableType == TableType.Chaining);
+        // [íë¦„ ì˜ˆì‹œ]
+        // 1. íŒ€ì› ë¡œì§ í˜¸ì¶œ: int index = currentTable.GetHashIndex(k);
+        // 2. ê°€ìƒ ì¸ë±ìŠ¤ í…ŒìŠ¤íŠ¸ (ì˜ˆì‹œë¡œ 5ë²ˆ ì¸ë±ìŠ¤ë¼ê³  ê°€ì •)
 
-        uiVisualizer.UpdateSlot(targetIndex, k, v, isChaining);
+        Debug.Log($"í˜„ì¬ í…Œì´ë¸” {currentTableType}");
 
-        Debug.Log($"µ¥ÀÌÅÍ Ãß°¡ ½Ãµµ: {k}:{v} -> Index: {targetIndex}");
+        if (currentTableType == TableType.OpenAddressing && openAddressingTable != null)
+        {
+            openAddressingTable.Add(key, value);
+
+            //int targetIndex = openAddressingTable.FindIndex(key); 
+
+            // í˜„ì¬ëŠ” í…ŒìŠ¤íŠ¸ë¥¼ ìœ„í•´ ëœë¤ ì¸ë±ìŠ¤ë¥¼ ì‚¬ìš© ì¤‘ì¸ ìƒíƒœì…ë‹ˆë‹¤.
+            int targetIndex = Random.Range(0, currentCapacity);
+
+            bool isChaining = (currentTableType == TableType.Chaining);
+
+            // 4. UI ì—…ë°ì´íŠ¸ í˜¸ì¶œ
+            hashTable.UpdateSlot(targetIndex, key, value, isChaining);
+
+            Debug.Log($"[{currentTableType}] ë°ì´í„° ì¶”ê°€: {key}:{value} -> Index: {targetIndex}");
+        }
+
+        keyInput.text = string.Empty;
+        valueInput.text = string.Empty;
     }
 
     private void OnRemoveClicked()
     {
-        // »èÁ¦ ·ÎÁ÷ ±¸Çö (ÆÀ¿ø ÇÔ¼ö È£Ãâ ÈÄ UI °»½Å)
-        Debug.Log("µ¥ÀÌÅÍ »èÁ¦ ½Ãµµ: " + keyInput.text);
+        Debug.Log("ë°ì´í„° ì‚­ì œ ì‹œë„: " + keyInput.text);
     }
 
     private void OnClearClicked()
     {
-        // ÀüÃ¼ Å¬¸®¾î
-        uiVisualizer.InitializeTable(currentCapacity);
-        Debug.Log("ÇØ½Ã Å×ÀÌºí ÃÊ±âÈ­");
+        hashTable.InitializeTable(currentCapacity);
+        Debug.Log("í•´ì‹œ í…Œì´ë¸” ì´ˆê¸°í™”");
     }
 
+    private void UpdateUI()
+    {
+        hashTable.InitializeTable(currentCapacity);
+
+        if (currentTableType == TableType.OpenAddressing && openAddressingTable != null)
+        {
+            var buckets = openAddressingTable.Table;
+
+            // ì˜ˆ: í…Œì´ë¸”ì˜ ëª¨ë“  ì¹¸ì„ ëŒë©´ì„œ ë°ì´í„°ê°€ ìˆëŠ” ê³³ë§Œ ê·¸ë¦¬ê¸°
+            for (int i = 0; i < currentCapacity; i++)
+            {
+                if (!buckets[i].isEmpty)
+                {
+                    hashTable.UpdateSlot(i, buckets[i].key, buckets[i].value, false);
+                }
+                //// íŒ€ì› ì½”ë“œì—ì„œ í•´ë‹¹ ì¸ë±ìŠ¤ì— ë°ì´í„°ê°€ ìˆëŠ”ì§€ í™•ì¸í•˜ëŠ” ë©”ì„œë“œê°€ í•„ìš”í•¨
+                //if (openAddressingTable.HasDataAt(i))
+                //{
+                //    var entry = openAddressingTable.GetEntryAt(i);
+                //    // ë°”ë€ ì¸ë±ìŠ¤(i)ì— ë§ì¶° ë…¸ë“œë¥¼ ìƒì„±í•¨
+                //    hashTable.UpdateSlot(i, entry.Key, entry.Value, false);
+                //}
+            }
+        }
+    }
 }
