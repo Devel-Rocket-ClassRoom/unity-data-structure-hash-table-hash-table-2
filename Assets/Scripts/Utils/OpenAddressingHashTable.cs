@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 	
-	public Func<int> OnResize;
+	public Action<int> OnResize;
 	
 	public struct OpenBucket {
 		public bool isEmpty;
@@ -130,7 +130,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 		_table = newBucket;
 		
 		// 리사이징 함수 호출
-		OnResize?.Invoke();
+		OnResize?.Invoke(Capacity);
 	}
 	
 	public int GetHash(TKey key, int tryCount = 1) {

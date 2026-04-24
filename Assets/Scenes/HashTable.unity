@@ -299,6 +299,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6756088644843644789, guid: 61b0a6bfb0f205b4d9cc89186664e145, type: 3}
+      propertyPath: m_text
+      value: Linear
+      objectReference: {fileID: 0}
+    - target: {fileID: 6756088644843644789, guid: 61b0a6bfb0f205b4d9cc89186664e145, type: 3}
       propertyPath: m_isOrthographic
       value: 1
       objectReference: {fileID: 0}
@@ -317,6 +321,18 @@ PrefabInstance:
     - target: {fileID: 6756088644843644789, guid: 61b0a6bfb0f205b4d9cc89186664e145, type: 3}
       propertyPath: m_ActiveFontFeatures.Array.size
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7185476441876668052, guid: 61b0a6bfb0f205b4d9cc89186664e145, type: 3}
+      propertyPath: m_Options.m_Options.Array.data[0].m_Text
+      value: Linear
+      objectReference: {fileID: 0}
+    - target: {fileID: 7185476441876668052, guid: 61b0a6bfb0f205b4d9cc89186664e145, type: 3}
+      propertyPath: m_Options.m_Options.Array.data[1].m_Text
+      value: Quadratic
+      objectReference: {fileID: 0}
+    - target: {fileID: 7185476441876668052, guid: 61b0a6bfb0f205b4d9cc89186664e145, type: 3}
+      propertyPath: m_Options.m_Options.Array.data[2].m_Text
+      value: DoubleHash
       objectReference: {fileID: 0}
     - target: {fileID: 8978176776294195475, guid: 61b0a6bfb0f205b4d9cc89186664e145, type: 3}
       propertyPath: m_Name
@@ -1708,7 +1724,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 480.24142, y: -681.4286}
+  m_AnchoredPosition: {x: 480.4412, y: -681.4286}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1906860584
@@ -2297,6 +2313,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6756088644843644789, guid: 61b0a6bfb0f205b4d9cc89186664e145, type: 3}
+      propertyPath: m_text
+      value: Simple
+      objectReference: {fileID: 0}
+    - target: {fileID: 6756088644843644789, guid: 61b0a6bfb0f205b4d9cc89186664e145, type: 3}
       propertyPath: m_isOrthographic
       value: 1
       objectReference: {fileID: 0}
@@ -2315,6 +2335,18 @@ PrefabInstance:
     - target: {fileID: 6756088644843644789, guid: 61b0a6bfb0f205b4d9cc89186664e145, type: 3}
       propertyPath: m_ActiveFontFeatures.Array.size
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7185476441876668052, guid: 61b0a6bfb0f205b4d9cc89186664e145, type: 3}
+      propertyPath: m_Options.m_Options.Array.data[0].m_Text
+      value: Simple
+      objectReference: {fileID: 0}
+    - target: {fileID: 7185476441876668052, guid: 61b0a6bfb0f205b4d9cc89186664e145, type: 3}
+      propertyPath: m_Options.m_Options.Array.data[1].m_Text
+      value: Chaining
+      objectReference: {fileID: 0}
+    - target: {fileID: 7185476441876668052, guid: 61b0a6bfb0f205b4d9cc89186664e145, type: 3}
+      propertyPath: m_Options.m_Options.Array.data[2].m_Text
+      value: OpenAddressing
       objectReference: {fileID: 0}
     - target: {fileID: 8978176776294195475, guid: 61b0a6bfb0f205b4d9cc89186664e145, type: 3}
       propertyPath: m_Name

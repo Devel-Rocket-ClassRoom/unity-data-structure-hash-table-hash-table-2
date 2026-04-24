@@ -1,4 +1,7 @@
-﻿using TMPro;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -19,18 +22,21 @@ public class HashTableManager : MonoBehaviour
     public Button removeButton;
     public Button clearButton;
 
-    public int initalCapacity;
     private int currentCapacity;
+
+    private int key = 0;
+    private int value = 0;
 
     private TableType currentTableType;
     private ProbingType currentProbingType;
+
     // private SimpleHashTable<string, string> simpleTable;
     // private ChainingHashTable<string, string> chainingTable;
     private OpenAddressingHashTable<int, int> openAddressingTable;
 
     void Start()
     {
-        currentCapacity = initalCapacity;
+        currentCapacity = 16;
 
         tableDropdown.onValueChanged.AddListener(OnTableTypeChanged);
         probingDropdown.onValueChanged.AddListener(OnProbingTypeChanged);
@@ -53,7 +59,14 @@ public class HashTableManager : MonoBehaviour
         {
             case TableType.OpenAddressing:
                 openAddressingTable = new OpenAddressingHashTable<int, int>();
+                openAddressingTable.OnResize += SetCurrentCapacity;
                 break;
+                //case TableType.Simple:
+                //    currentTable = new SimpleHashTable<int, int>();
+                //    break;
+                //case TableType.Chaining:
+                //    currentTable = new ChainingHashTable<int, int>();
+                //    break;
         }
 
         hashTable.InitializeTable(currentCapacity);
@@ -61,18 +74,20 @@ public class HashTableManager : MonoBehaviour
         Debug.Log($"{currentTableType} 테이블로 전환. 크기: {currentCapacity}");
     }
 
+    private void SetCurrentCapacity(int val) {
+        currentCapacity = val;
+    }
+
     public void OnProbingTypeChanged(int index)
     {
         currentProbingType = (ProbingType)index;
         Debug.Log($"프로빙 방식 변경: {currentProbingType}");
+        openAddressingTable.SetProbingType(currentProbingType);
         UpdateUI();
     }
 
     private void OnAddClicked()
     {
-        int key = 0;
-        int value = 0;
-
         if (keyInput != null && !(int.TryParse(keyInput.text, out key) || !int.TryParse(valueInput.text, out value)))
         {
             Debug.Log("Key와 Value에 숫자를 입력하세요.");
@@ -85,22 +100,32 @@ public class HashTableManager : MonoBehaviour
 
         Debug.Log($"현재 테이블 {currentTableType}");
 
-        if (currentTableType == TableType.OpenAddressing && openAddressingTable != null)
+        bool isChaining = (currentTableType == TableType.Chaining);
+
+        //int targetIndex = 0;
+
+        switch (currentTableType)
         {
-            openAddressingTable.Add(key, value);
-
-            //int targetIndex = openAddressingTable.FindIndex(key); 
-
-            // 현재는 테스트를 위해 랜덤 인덱스를 사용 중인 상태입니다.
-            int targetIndex = Random.Range(0, currentCapacity);
-
-            bool isChaining = (currentTableType == TableType.Chaining);
-
-            // 4. UI 업데이트 호출
-            hashTable.UpdateSlot(targetIndex, key, value, isChaining);
-
-            Debug.Log($"[{currentTableType}] 데이터 추가: {key}:{value} -> Index: {targetIndex}");
+            case TableType.OpenAddressing:
+                openAddressingTable.Add(key, value);
+                Debug.Log("ADD");
+                PrintTableState();
+                //targetIndex = openAddressingTable.CurrRefIndex;
+                //hashTable.UpdateSlot(targetIndex, key, value, isChaining);
+                break;
+            //case TableType.Chaining:
+            //    openAddressingTable.Add(key, value);
+            //    targetIndex = openAddressingTable.CurrRefIndex;
+            //    hashTable.UpdateSlot(targetIndex, key, value, isChaining);
+            //    break;
+            //case TableType.OpenAddressing:
+            //    openAddressingTable.Add(key, value);
+            //    targetIndex = openAddressingTable.CurrRefIndex;
+            //    hashTable.UpdateSlot(targetIndex, key, value, isChaining);
+            //    break;
         }
+
+        UpdateUI();
 
         keyInput.text = string.Empty;
         valueInput.text = string.Empty;
@@ -108,12 +133,40 @@ public class HashTableManager : MonoBehaviour
 
     private void OnRemoveClicked()
     {
+        if (keyInput != null && !(int.TryParse(keyInput.text, out key)))
+        {
+            Debug.Log("Key와 Value에 숫자를 입력하세요.");
+            return;
+        }
+
+        switch (currentTableType)
+        {
+            case TableType.OpenAddressing:
+                openAddressingTable.Remove(key);
+                //targetIndex = openAddressingTable.CurrRefIndex;
+                //hashTable.UpdateSlot(targetIndex, key, value, isChaining);
+                break;
+                //case TableType.Chaining:
+                //    openAddressingTable.Add(key, value);
+                //    targetIndex = openAddressingTable.CurrRefIndex;
+                //    hashTable.UpdateSlot(targetIndex, key, value, isChaining);
+                //    break;
+                //case TableType.OpenAddressing:
+                //    openAddressingTable.Add(key, value);
+                //    targetIndex = openAddressingTable.CurrRefIndex;
+                //    hashTable.UpdateSlot(targetIndex, key, value, isChaining);
+                //    break;
+        }
+
+        UpdateUI();
+
         Debug.Log("데이터 삭제 시도: " + keyInput.text);
     }
 
     private void OnClearClicked()
     {
-        hashTable.InitializeTable(currentCapacity);
+        openAddressingTable.Clear();
+        UpdateUI();
         Debug.Log("해시 테이블 초기화");
     }
 
@@ -123,6 +176,8 @@ public class HashTableManager : MonoBehaviour
 
         if (currentTableType == TableType.OpenAddressing && openAddressingTable != null)
         {
+            Debug.Log("UI갱신");
+            PrintTableState();
             var buckets = openAddressingTable.Table;
 
             // 예: 테이블의 모든 칸을 돌면서 데이터가 있는 곳만 그리기
@@ -141,5 +196,21 @@ public class HashTableManager : MonoBehaviour
                 //}
             }
         }
+    }
+
+    private void PrintTableState()
+    {
+        OpenAddressingHashTable<int, int>.OpenBucket[] _buckets = openAddressingTable.Table;
+        Debug.Log($"현재 내부 테이블 크기 : {openAddressingTable.Capacity}\n" +
+                  $"실제로 저장된 데이터 개수 : {openAddressingTable.Count}\n" +
+                  $"내부 테이블 상태 : ");
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < _buckets.Length; i++)
+        {
+            sb.Append($"Index : {i}, Key : {_buckets[i].key}, Value : {_buckets[i].value}\n");
+        }
+
+        Debug.Log($"{sb}");
     }
 }
