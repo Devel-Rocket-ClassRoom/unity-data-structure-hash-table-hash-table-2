@@ -180,7 +180,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 
     public bool Contains(KeyValuePair<TKey, TValue> item)
     {
-        return TryGetValue(item.Key, out _);
+        return ContainsKey(item.Key);
     }
 
     /// <summary>
