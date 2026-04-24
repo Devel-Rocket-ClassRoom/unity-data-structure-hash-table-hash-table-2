@@ -306,7 +306,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 			int hash = GetHash(key, tryCount++);
 			
 			// 툼스톤 자리를 찾았다면, 일단 넘어가기
-			if (_table[hash].isEmpty && _table[hash].isDeleted) {
+			if (table[hash].isEmpty && table[hash].isDeleted) {
 				// 첫 툼스톤 자리만 저장함.
 				if (firstTombstone == -1) {
 					firstTombstone = hash;
@@ -355,7 +355,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 			int hash = GetHash(key, tryCount++);
 			
 			// 툼스톤 자리를 찾았다면, 일단 넘어가기
-			if (_table[hash].isEmpty && _table[hash].isDeleted) {
+			if (table[hash].isEmpty && table[hash].isDeleted) {
 				// 첫 툼스톤 자리만 저장함.
 				if (firstTombstone == -1) {
 					firstTombstone = hash;
