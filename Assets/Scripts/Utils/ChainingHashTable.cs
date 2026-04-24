@@ -43,6 +43,7 @@ public class ChainingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
                 }
             }
             _hashTable[hash].AddLast(new Bucket(key, value));
+            CurrRefIndex = hash;
             _count++;
 
             if (_loadFactor) Resize();
@@ -86,6 +87,8 @@ public class ChainingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
     public int Capacity => _hashTable.Length;
     private bool _loadFactor => (float)_count / _hashTable.Length >= 0.75f;
 
+    public int CurrRefIndex = -1;
+
     bool ICollection<KeyValuePair<TKey, TValue>>.IsReadOnly => false;
 
     public ChainingHashTable()
@@ -120,6 +123,7 @@ public class ChainingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
             if (bucket.Key.Equals(key)) throw new ArgumentException();
         }
         _hashTable[hash].AddLast(new Bucket(key, value));
+        CurrRefIndex = hash;
         _count++;
 
         if (_loadFactor) Resize();
@@ -151,13 +155,13 @@ public class ChainingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
         }
     }
 
-    // public IEnumerable<(int Index, LinkedList<Bucket> Chain)> EnumerateBuckets()
-    // {
-    //     for (int i = 0; i < _hashTable.Length; i++)
-    //     {
-    //         yield return (i, _hashTable[i]);
-    //     }
-    // }
+    public IEnumerable GetBuckets(TKey key)
+    {
+        foreach (var bucket in _hashTable[GetHash(key)])
+        {
+            yield return bucket;
+        }
+    }
 
     public bool Remove(KeyValuePair<TKey, TValue> item) => Remove(item.Key);
     public bool Remove(TKey key)
@@ -208,6 +212,7 @@ public class ChainingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
         }
 
         _hashTable = newHashTable;
+        CurrRefIndex = -1;
     }
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
