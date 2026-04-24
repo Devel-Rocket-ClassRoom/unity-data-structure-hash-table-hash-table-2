@@ -1152,7 +1152,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4245489921017833318, guid: bc3a2ec0c1518bf4792a6b577b2eefb2, type: 3}
       propertyPath: m_Value
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6646079291124388203, guid: bc3a2ec0c1518bf4792a6b577b2eefb2, type: 3}
       propertyPath: m_Name
@@ -1679,7 +1679,6 @@ MonoBehaviour:
   addButton: {fileID: 8957754036620950832}
   removeButton: {fileID: 8786462789417428056}
   clearButton: {fileID: 1123817630700780930}
-  initalCapacity: 16
 --- !u!224 &1854284248 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 6098523508998245603, guid: 61b0a6bfb0f205b4d9cc89186664e145, type: 3}
@@ -1724,7 +1723,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 480.4412, y: -681.4286}
+  m_AnchoredPosition: {x: 480.24142, y: -681.4286}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1906860584
@@ -2090,11 +2089,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2208232784789147342, guid: db030aded72ef404a9cf956ad136d702, type: 3}
       propertyPath: m_text
-      value: 'RANDOM '
+      value: CLEAR
       objectReference: {fileID: 0}
     - target: {fileID: 2208232784789147342, guid: db030aded72ef404a9cf956ad136d702, type: 3}
       propertyPath: m_fontSize
-      value: 54.15
+      value: 72
       objectReference: {fileID: 0}
     - target: {fileID: 2208232784789147342, guid: db030aded72ef404a9cf956ad136d702, type: 3}
       propertyPath: m_enableAutoSizing

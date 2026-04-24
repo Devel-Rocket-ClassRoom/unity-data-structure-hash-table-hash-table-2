@@ -6,7 +6,7 @@ using System;
 public class SimpleHashTable<TKey, TValue> : IDictionary<TKey, TValue>
 {
     // 버킷으 정보를 담을 구조체
-    private struct Entry
+    public struct Entry
     {
         public TKey Key;
         public TValue Value;
@@ -18,6 +18,8 @@ public class SimpleHashTable<TKey, TValue> : IDictionary<TKey, TValue>
     private int _count;
 
     public int IndexAccess;
+
+    public Entry[] Buckets => _buckets;
 
     // 기본 _buckets 저장소의 갯수
     private const int DefaultCapacity = 16;

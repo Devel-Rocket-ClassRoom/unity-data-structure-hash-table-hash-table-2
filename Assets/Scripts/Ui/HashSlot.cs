@@ -7,14 +7,10 @@ public class HashSlot : MonoBehaviour
     public Transform Nodes;
     public GameObject nodePrefab;
 
-    // 당장은 쓸 일이 없을 것 같은데 혹시나 해서 만들어둠
-    private int myIndex;
-
     // 인덱스 설정
     public void SetIndex(int index)
     {
-        myIndex = index;
-        indexText.text = $"I: {myIndex}";
+        indexText.text = $"I: {index}";
     }
 
     // 데이터를 추가

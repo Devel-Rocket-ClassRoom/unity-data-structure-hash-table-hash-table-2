@@ -1,25 +1,26 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.InputSystem;
+
+public class Bucket<TKey, TValue>
+{
+    public TKey Key;
+    public TValue Value;
+
+    public Bucket(TKey key) : this(key, default) { }
+    public Bucket(TKey key, TValue value)
+    {
+        Key = key;
+        Value = value;
+    }
+}
 
 public class ChainingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
 {
-    // public Func<int> OnReSize()2;
+    public Action<int> OnReSize;
 
-    private class Bucket
-    {
-        public TKey Key;
-        public TValue Value;
-
-        public Bucket(TKey key) : this(key, default) { }
-        public Bucket(TKey key, TValue value)
-        {
-            Key = key;
-            Value = value;
-        }
-    }
-
-    private LinkedList<Bucket>[] _hashTable;
+    private LinkedList<Bucket<TKey, TValue>>[] _hashTable;
 
     public TValue this[TKey key]
     {
@@ -42,7 +43,7 @@ public class ChainingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
                     return;
                 }
             }
-            _hashTable[hash].AddLast(new Bucket(key, value));
+            _hashTable[hash].AddLast(new Bucket<TKey, TValue>(key, value));
             CurrRefIndex = hash;
             _count++;
 
@@ -98,7 +99,7 @@ public class ChainingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
 
     private void Initialize()
     {
-        _hashTable = new LinkedList<Bucket>[_hashTable?.Length ?? k_InitializeSize];
+        _hashTable = new LinkedList<Bucket<TKey, TValue>>[_hashTable?.Length ?? k_InitializeSize];
         for (int i = 0; i < Capacity; i++)
         {
             _hashTable[i] = new();
@@ -122,7 +123,7 @@ public class ChainingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
         {
             if (bucket.Key.Equals(key)) throw new ArgumentException();
         }
-        _hashTable[hash].AddLast(new Bucket(key, value));
+        _hashTable[hash].AddLast(new Bucket<TKey, TValue>(key, value));
         CurrRefIndex = hash;
         _count++;
 
@@ -165,7 +166,7 @@ public class ChainingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
         }
     }
 
-    public IEnumerable GetBuckets(TKey key)
+    public IEnumerable<Bucket<TKey, TValue>> GetBuckets(TKey key)
     {
         foreach (var bucket in _hashTable[GetHash(key)])
         {
@@ -207,7 +208,7 @@ public class ChainingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
 
     private void Resize()
     {
-        LinkedList<Bucket>[] newHashTable = new LinkedList<Bucket>[_hashTable.Length * 2];
+        LinkedList<Bucket<TKey, TValue>>[] newHashTable = new LinkedList<Bucket<TKey, TValue>>[_hashTable.Length * 2];
         for (int i = 0; i < newHashTable.Length; i++)
         {
             newHashTable[i] = new();
@@ -223,6 +224,8 @@ public class ChainingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
 
         _hashTable = newHashTable;
         CurrRefIndex = -1;
+
+        OnReSize?.Invoke(Capacity);
     }
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
