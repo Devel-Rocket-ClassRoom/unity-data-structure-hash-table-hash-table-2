@@ -58,8 +58,9 @@ public class SimpleHashTable<TKey, TValue> : IDictionary<TKey, TValue>
             {
                 return value;
             }
-
-            throw new KeyNotFoundException($"키 {key} 찾을 수 없음.");
+            Add(key, default);
+            return default;
+            // throw new KeyNotFoundException($"키 {key} 찾을 수 없음.");
             //throw new System.NotImplementedException(); 
         }
         set
