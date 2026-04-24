@@ -3,17 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum ProbingMethod
-{
-    Linear,
-    Qaudratic,
-    DoubleHash
-}
-
-public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
-{
-
-    public Func<int> OnResize;
+public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
+    public Action<int> OnResize;
 
     public struct OpenBucket
     {
@@ -50,16 +41,16 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
     private int _size;
     private int _count;
     private OpenBucket[] _table;
-    private ProbingMethod _probingMethod;
+    private ProbingType _probingType;
 
     public int CurrRefIndex { get; private set; }
 
     // 정렬 방식 바꾸면 리사이징처럼 버킷 재계산
-    private ProbingMethod ProbingMethod
+    private ProbingType ProbingType
     {
         set
         {
-            _probingMethod = value;
+            _probingType = value;
 
             // 새 해시테이블 생성
             OpenBucket[] newBucket = new OpenBucket[Capacity];
@@ -95,15 +86,15 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
     private bool NeedsResizing => LoadFactor >= 0.6f;
 
     // 기본 Probing 방식은 Linear
-    public OpenAddressingHashTable() : this(ProbingMethod.Linear) { }
+    public OpenAddressingHashTable() : this(ProbingType.Linear) { }
 
-    public OpenAddressingHashTable(ProbingMethod method)
+    public OpenAddressingHashTable(ProbingType type)
     {
         _count = 0;
         _size = k_InitialSize;
         _table = new OpenBucket[_size];
         Clear();
-        _probingMethod = method;
+        _probingType = type;
     }
 
     public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
@@ -157,7 +148,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
         _table = newBucket;
 
         // 리사이징 함수 호출
-        OnResize?.Invoke();
+        OnResize?.Invoke(Capacity);
     }
 
     public int GetHash(TKey key, int tryCount = 1)
@@ -175,11 +166,11 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
             < 1 => hash,
 
             // 한번 충돌이 발생했다면, 방법에 따라 다음 Hash 반환
-            _ => _probingMethod switch
+            _ => _probingType switch
             {
-                ProbingMethod.Linear => (hash + tryCount) % Capacity,
-                ProbingMethod.Qaudratic => (hash + (int)Mathf.Pow(tryCount, 2)) % Capacity,
-                ProbingMethod.DoubleHash => (hash + tryCount).GetHashCode() % Capacity,
+                ProbingType.Linear => (hash + tryCount) % Capacity,
+                ProbingType.Quadratic => (hash + (int)Mathf.Pow(tryCount, 2)) % Capacity,
+                ProbingType.DoubleHash => (hash + tryCount).GetHashCode() % Capacity,
                 _ => throw new InvalidOperationException()
             }
         };
@@ -337,9 +328,9 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
 
     // @@@@@@@@@@@@ 테스트용 함수 @@@@@@@@@@@@@
     public OpenBucket[] Table => _table;
-    public void SetProbingMethod(ProbingMethod method)
+    public void SetProbingType(ProbingType type)
     {
-        ProbingMethod = method;
+        ProbingType = type;
     }
 
 
@@ -361,7 +352,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
             int hash = GetHash(key, tryCount++);
 
             // 툼스톤 자리를 찾았다면, 일단 넘어가기
-            if (table[hash].isEmpty && table[hash].isDeleted)
+            if (_table[hash].isEmpty && _table[hash].isDeleted)
             {
                 // 첫 툼스톤 자리만 저장함.
                 if (firstTombstone == -1)
