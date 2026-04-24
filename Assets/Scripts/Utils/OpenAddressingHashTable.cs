@@ -46,8 +46,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 	private OpenBucket[] _table;
 	private ProbingMethod _probingMethod;
 	
-	public int LastAddedIdx { get; private set;}
-	public int LastRemovedIdx { get; private set;}
+	public int CurrRefIndex { get; private set;}
 	
 	// 정렬 방식 바꾸면 리사이징처럼 버킷 재계산
 	private ProbingMethod ProbingMethod {
@@ -206,7 +205,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 			// 값이 있다면, 비교하고 삭제 결정
 			if (_table[hash].key.Equals(key)) {
 				_table[hash].DeleteValue();
-				LastRemovedIdx = hash;
+				CurrRefIndex = hash;
 				return true;
 			}
 		} while (true);
@@ -320,9 +319,9 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 				// 빈 툼스톤 자리가 있었다면, 거기다 저장
 				if (firstTombstone != -1) {
 					table[firstTombstone].SetValue(key, value);
-					LastAddedIdx = firstTombstone;
+					CurrRefIndex = firstTombstone;
 				} else {
-					LastAddedIdx = hash;
+					CurrRefIndex = hash;
 					table[hash].SetValue(key, value);
 				}
 				
@@ -368,10 +367,10 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 			if (table[hash].isEmpty) {
 				// 빈 툼스톤 자리가 있었다면, 거기다 저장
 				if (firstTombstone != -1) {
-					LastAddedIdx = firstTombstone;
+					CurrRefIndex = firstTombstone;
 					table[firstTombstone].SetValue(key, value);
 				} else {
-					LastAddedIdx = hash;
+					CurrRefIndex = hash;
 					table[hash].SetValue(key, value);	
 				}
 				
@@ -384,6 +383,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 			// 이미 존재하는 키였다면, 값 갱신
 			if (!table[hash].isEmpty && table[hash].key.Equals(key)) {
 				table[hash].SetValue(key, value);
+				CurrRefIndex = hash;
 			}
 			
 		} while (true);
