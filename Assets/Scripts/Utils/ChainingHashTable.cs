@@ -141,7 +141,17 @@ public class ChainingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
 
     public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
     {
-        // TODO: 해시테이블? 복사 구현
+        if (array == null) throw new ArgumentNullException("배열이 없음");
+        if (arrayIndex < 0) throw new ArgumentOutOfRangeException("옳지 않은 인덱스");
+        if (array.Length - arrayIndex < _count) throw new ArgumentException("배열 공간 부족");
+
+        foreach (var buckets in _hashTable)
+        {
+            foreach (var bucket in buckets)
+            {
+                array[arrayIndex++] = new(bucket.Key, bucket.Value);
+            }
+        }
     }
 
     public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
