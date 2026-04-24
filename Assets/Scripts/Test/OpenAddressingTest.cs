@@ -60,7 +60,7 @@ public class OpenAddressingTest : MonoBehaviour {
 		}
 		
 		if (Input.GetKeyDown(_switchProbingMethodKey)) {
-			_table.SetProbingMethod(probingType);
+			_table.SetProbingType(probingType);
 			Debug.Log($"Switch Method : 빈 해시 탐색 방식 {probingType.ToString()}(으)로 변경");
 			
 			PrintTableState();

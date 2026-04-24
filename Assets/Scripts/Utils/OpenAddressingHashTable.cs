@@ -279,7 +279,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 	
 	// @@@@@@@@@@@@ 테스트용 함수 @@@@@@@@@@@@@
 	public OpenBucket[] Table => _table;
-	public void SetProbingMethod(ProbingType type) {
+	public void SetProbingType(ProbingType type) {
 		ProbingType = type;
 	}
 	
