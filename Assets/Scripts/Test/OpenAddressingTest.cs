@@ -19,8 +19,8 @@ public class OpenAddressingTest : MonoBehaviour {
 	[SerializeField] private string _removeKey = "hello";
 	[SerializeField] private KeyCode _removeKeyCode = KeyCode.Keypad3;
 
-	[Header("=== ProbingMethod ===")]
-	[SerializeField] private ProbingMethod _probingMethod = ProbingMethod.Linear;
+	[Header("=== ProbingType ===")]
+	[SerializeField] private ProbingType probingType = ProbingType.Linear;
 	[SerializeField] private KeyCode _switchProbingMethodKey = KeyCode.Keypad4;
 
 	// Awake에서 _table 초기화
@@ -60,8 +60,8 @@ public class OpenAddressingTest : MonoBehaviour {
 		}
 		
 		if (Input.GetKeyDown(_switchProbingMethodKey)) {
-			_table.SetProbingMethod(_probingMethod);
-			Debug.Log($"Switch Method : 빈 해시 탐색 방식 {_probingMethod.ToString()}(으)로 변경");
+			_table.SetProbingType(probingType);
+			Debug.Log($"Switch Method : 빈 해시 탐색 방식 {probingType.ToString()}(으)로 변경");
 			
 			PrintTableState();
 		}

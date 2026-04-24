@@ -3,17 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum ProbingMethod
-{
-    Linear,
-    Qaudratic,
-    DoubleHash
-}
-
 public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
 {
 
-    public Func<int> OnResize;
+    public Action<int> OnResize;
 
     public struct OpenBucket
     {
@@ -50,16 +43,16 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
     private int _size;
     private int _count;
     private OpenBucket[] _table;
-    private ProbingMethod _probingMethod;
+    private ProbingType _probingType;
 
     public int CurrRefIndex { get; private set; }
 
     // 정렬 방식 바꾸면 리사이징처럼 버킷 재계산
-    private ProbingMethod ProbingMethod
+    private ProbingType ProbingType
     {
         set
         {
-            _probingMethod = value;
+            _probingType = value;
 
             // 새 해시테이블 생성
             OpenBucket[] newBucket = new OpenBucket[Capacity];
@@ -95,15 +88,15 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
     private bool NeedsResizing => LoadFactor >= 0.6f;
 
     // 기본 Probing 방식은 Linear
-    public OpenAddressingHashTable() : this(ProbingMethod.Linear) { }
+    public OpenAddressingHashTable() : this(ProbingType.Linear) { }
 
-    public OpenAddressingHashTable(ProbingMethod method)
+    public OpenAddressingHashTable(ProbingType type)
     {
         _count = 0;
         _size = k_InitialSize;
         _table = new OpenBucket[_size];
         Clear();
-        _probingMethod = method;
+        _probingType = type;
     }
 
     public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
@@ -157,7 +150,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
         _table = newBucket;
 
         // 리사이징 함수 호출
-        OnResize?.Invoke();
+        OnResize?.Invoke(Capacity);
     }
 
     public int GetHash(TKey key, int tryCount = 1)
@@ -175,11 +168,11 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
             < 1 => hash,
 
             // 한번 충돌이 발생했다면, 방법에 따라 다음 Hash 반환
-            _ => _probingMethod switch
+            _ => _probingType switch
             {
-                ProbingMethod.Linear => (hash + tryCount) % Capacity,
-                ProbingMethod.Qaudratic => (hash + (int)Mathf.Pow(tryCount, 2)) % Capacity,
-                ProbingMethod.DoubleHash => (hash + tryCount).GetHashCode() % Capacity,
+                ProbingType.Linear => (hash + tryCount) % Capacity,
+                ProbingType.Quadratic => (hash + (int)Mathf.Pow(tryCount, 2)) % Capacity,
+                ProbingType.DoubleHash => (hash + tryCount).GetHashCode() % Capacity,
                 _ => throw new InvalidOperationException()
             }
         };
@@ -306,6 +299,159 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
         }
     }
 
+    public ICollection<TKey> Keys
+    {
+        get
+        {
+            List<TKey> keys = new List<TKey>();
+
+            for (int i = 0; i < _table.Length; i++)
+            {
+                if (_table[i].isEmpty) { keys.Add(_table[i].key); }
+            }
+
+            return keys;
+        }
+    }
+    public ICollection<TValue> Values
+    {
+        get
+        {
+            List<TValue> values = new List<TValue>();
+
+            for (int i = 0; i < _table.Length; i++)
+            {
+                if (_table[i].isEmpty) { values.Add(_table[i].value); }
+            }
+
+            return values;
+        }
+    }
+
+    // @@@@@@@@@@@@ 테스트용 함수 @@@@@@@@@@@@@
+    public OpenBucket[] Table => _table;
+    public void SetProbingType(ProbingType type)
+    {
+        ProbingType = type;
+    }
+
+
+    /// <summary>
+    /// 특정 테이블에 값을 넣는 함수. Add 및 Resizing시 사용
+    /// </summary>
+    /// <param name="key">들어갈 키</param>
+    /// <param name="value">들어갈 값</param>
+    /// <param name="table">넣고자 하는 해시테이블</param>
+    private void AddWithCollision(TKey key, TValue value, OpenBucket[] table)
+    {
+        int tryCount = 0;
+        int firstTombstone = -1;
+        bool addCountFlag = table == _table;
+
+        do
+        {
+            // 해시값 가져오기
+            int hash = GetHash(key, tryCount++);
+
+            // 툼스톤 자리를 찾았다면, 일단 넘어가기
+            if (_table[hash].isEmpty && _table[hash].isDeleted)
+            {
+                // 첫 툼스톤 자리만 저장함.
+                if (firstTombstone == -1)
+                {
+                    firstTombstone = hash;
+                }
+                continue;
+            }
+
+            // 빈 자리를 찾았다면, 삽입 후 종료
+            if (table[hash].isEmpty)
+            {
+                // 빈 툼스톤 자리가 있었다면, 거기다 저장
+                if (firstTombstone != -1)
+                {
+                    table[firstTombstone].SetValue(key, value);
+                    CurrRefIndex = firstTombstone;
+                }
+                else
+                {
+                    CurrRefIndex = hash;
+                    table[hash].SetValue(key, value);
+                }
+
+                // 현재 내 테이블에 추가했다면, Count 증가
+                if (addCountFlag) { Count++; }
+
+                break;
+            }
+
+            // 이미 존재하는 키였다면, Exception
+            if (!table[hash].isEmpty && table[hash].key.Equals(key))
+            {
+                throw new ArgumentException($"키 {key}는 이미 존재하는 값입니다.");
+            }
+
+        } while (true);
+    }
+
+    /// <summary>
+    /// 특정 테이블에 값을 넣는 함수. Add 및 Resizing시 사용
+    /// </summary>
+    /// <param name="key">들어갈 키</param>
+    /// <param name="value">들어갈 값</param>
+    /// <param name="table">넣고자 하는 해시테이블</param>
+    private void AddWithoutCollision(TKey key, TValue value, OpenBucket[] table)
+    {
+        int tryCount = 0;
+        int firstTombstone = -1;
+        bool addCountFlag = table == _table;
+
+        do
+        {
+            // 해시값 가져오기
+            int hash = GetHash(key, tryCount++);
+
+            // 툼스톤 자리를 찾았다면, 일단 넘어가기
+            if (table[hash].isEmpty && table[hash].isDeleted)
+            {
+                // 첫 툼스톤 자리만 저장함.
+                if (firstTombstone == -1)
+                {
+                    firstTombstone = hash;
+                }
+                continue;
+            }
+
+            // 빈 자리를 찾았다면, 삽입 후 종료
+            if (table[hash].isEmpty)
+            {
+                // 빈 툼스톤 자리가 있었다면, 거기다 저장
+                if (firstTombstone != -1)
+                {
+                    CurrRefIndex = firstTombstone;
+                    table[firstTombstone].SetValue(key, value);
+                }
+                else
+                {
+                    CurrRefIndex = hash;
+                    table[hash].SetValue(key, value);
+                }
+
+                // 현재 내 테이블에 추가했다면, Count 증가
+                if (addCountFlag) { Count++; }
+
+                break;
+            }
+
+            // 이미 존재하는 키였다면, 값 갱신
+            if (!table[hash].isEmpty && table[hash].key.Equals(key))
+            {
+                table[hash].SetValue(key, value);
+                CurrRefIndex = hash;
+            }
+
+        } while (true);
+    }
     public ICollection<TKey> Keys
     {
         get
