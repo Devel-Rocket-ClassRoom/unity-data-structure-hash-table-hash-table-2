@@ -3,12 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum ProbingMethod {
-	Linear,
-	Qaudratic,
-	DoubleHash
-}
-
 public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 	
 	public Func<int> OnResize;
@@ -44,14 +38,14 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 	private int _size;
 	private int _count;
 	private OpenBucket[] _table;
-	private ProbingMethod _probingMethod;
+	private ProbingType _probingType;
 	
 	public int CurrRefIndex { get; private set;}
 	
 	// 정렬 방식 바꾸면 리사이징처럼 버킷 재계산
-	private ProbingMethod ProbingMethod {
+	private ProbingType ProbingType {
 		set {
-			_probingMethod = value;
+			_probingType = value;
 			
 			// 새 해시테이블 생성
 			OpenBucket[] newBucket = new OpenBucket[Capacity];
@@ -84,14 +78,14 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 	private bool NeedsResizing => LoadFactor >= 0.6f;
 	
 	// 기본 Probing 방식은 Linear
-	public OpenAddressingHashTable() : this(ProbingMethod.Linear) {	}
+	public OpenAddressingHashTable() : this(ProbingType.Linear) {	}
 	
-	public OpenAddressingHashTable(ProbingMethod method) {
+	public OpenAddressingHashTable(ProbingType type) {
 		_count = 0;
 		_size = k_InitialSize;
 		_table = new OpenBucket[_size];
 		Clear();
-		_probingMethod = method;
+		_probingType = type;
 	}
 	
 	public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() {
@@ -151,10 +145,10 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 			< 1 => hash,
 			
 			// 한번 충돌이 발생했다면, 방법에 따라 다음 Hash 반환
-			_ => _probingMethod switch {
-				ProbingMethod.Linear => (hash + tryCount) % Capacity,
-				ProbingMethod.Qaudratic => (hash + (int)Mathf.Pow(tryCount, 2)) % Capacity,
-				ProbingMethod.DoubleHash => (hash + tryCount).GetHashCode() % Capacity,
+			_ => _probingType switch {
+				ProbingType.Linear => (hash + tryCount) % Capacity,
+				ProbingType.Quadratic => (hash + (int)Mathf.Pow(tryCount, 2)) % Capacity,
+				ProbingType.DoubleHash => (hash + tryCount).GetHashCode() % Capacity,
 				_ => throw new InvalidOperationException()
 			}
 		};
@@ -285,8 +279,8 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 	
 	// @@@@@@@@@@@@ 테스트용 함수 @@@@@@@@@@@@@
 	public OpenBucket[] Table => _table;
-	public void SetProbingMethod(ProbingMethod method) {
-		ProbingMethod = method;
+	public void SetProbingMethod(ProbingType type) {
+		ProbingType = type;
 	}
 	
 	
