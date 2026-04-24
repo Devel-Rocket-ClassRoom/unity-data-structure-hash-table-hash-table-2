@@ -169,9 +169,11 @@ public class SimpleHashTable<TKey, TValue> : IDictionary<TKey, TValue>
 
     public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
     {
+        // 예외 발생시 예외 처리 코드
         if (array == null) throw new ArgumentNullException(nameof(array));
         if (arrayIndex < 0) throw new ArgumentOutOfRangeException(nameof(arrayIndex));
         if (array.Length - arrayIndex < _count) throw new ArgumentException("대상 배열이 너무 작습니다.");
+
 
         foreach (Entry e in _buckets)
             if (e.isOccupied)
