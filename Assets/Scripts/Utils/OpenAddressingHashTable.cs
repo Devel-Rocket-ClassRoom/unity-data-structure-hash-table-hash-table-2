@@ -11,6 +11,8 @@ public enum ProbingMethod {
 
 public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 	
+	public Func<int> OnResize;
+	
 	public struct OpenBucket {
 		public bool isEmpty;
 		public bool isDeleted;
@@ -44,6 +46,9 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 	private OpenBucket[] _table;
 	private ProbingMethod _probingMethod;
 	
+	public int LastAddedIdx { get; private set;}
+	public int LastRemovedIdx { get; private set;}
+	
 	// 정렬 방식 바꾸면 리사이징처럼 버킷 재계산
 	private ProbingMethod ProbingMethod {
 		set {
@@ -56,7 +61,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 			// 이미 있는 값을 새 테이블로 이전
 			for (int i = 0; i < _table.Length; i++) {
 				if (_table[i].isEmpty) { continue; }
-				Add(_table[i].key, _table[i].value, newBucket);
+				AddWithCollision(_table[i].key, _table[i].value, newBucket);
 			}
 		
 			// 새 테이블 적용
@@ -104,8 +109,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 	
 	public void Add(TKey key, TValue value) {
 		// 지금 내 테이블에 값 Add
-		Add(key, value, _table);
-		Count++;
+		AddWithCollision(key, value, _table);
 		
 		// 로드팩터 검사 후 필요하다면 리사이징
 		if (NeedsResizing) {
@@ -117,48 +121,6 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 		Add(item.Key, item.Value);
 	}
 	
-	/// <summary>
-	/// 특정 테이블에 값을 넣는 함수. Add 및 Resizing시 사용
-	/// </summary>
-	/// <param name="key">들어갈 키</param>
-	/// <param name="value">들어갈 값</param>
-	/// <param name="table">넣고자 하는 해시테이블</param>
-	private void Add(TKey key, TValue value, OpenBucket[] table) {
-		int tryCount = 0;
-		int firstTombstone = -1;
-		
-		do {
-			// 해시값 가져오기
-			int hash = GetHash(key, tryCount++);
-			
-			// 툼스톤 자리를 찾았다면, 일단 넘어가기
-			if (_table[hash].isEmpty && _table[hash].isDeleted) {
-				// 첫 툼스톤 자리만 저장함.
-				if (firstTombstone == -1) {
-					firstTombstone = hash;
-				}
-				continue;
-			}
-			
-			// 빈 자리를 찾았다면, 삽입 후 종료
-			if (table[hash].isEmpty) {
-				// 빈 툼스톤 자리가 있었다면, 거기다 저장
-				if (firstTombstone != -1) {
-					table[firstTombstone].SetValue(key, value);
-				} else {
-					table[hash].SetValue(key, value);	
-				}
-				break;
-			}
-			
-			// 이미 존재하는 키였다면, Exception
-			if (!table[hash].isEmpty && table[hash].key.Equals(key)) {
-				throw new ArgumentException($"키 {key}는 이미 존재하는 값입니다.");
-			}
-			
-		} while (true);
-	}
-	
 	private void Resize() {
 		Capacity *= 2;
 		// Capacity가 2배로 증가된 새 해시테이블 생성
@@ -168,11 +130,14 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 		// 이미 있는 값을 새 테이블로 이전
 		for (int i = 0; i < _table.Length; i++) {
 			if (_table[i].isEmpty) { continue; }
-			Add(_table[i].key, _table[i].value, newBucket);
+			AddWithCollision(_table[i].key, _table[i].value, newBucket);
 		}
 		
 		// 새 테이블 적용
 		_table = newBucket;
+		
+		// 리사이징 함수 호출
+		OnResize?.Invoke();
 	}
 	
 	public int GetHash(TKey key, int tryCount = 1) {
@@ -241,6 +206,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 			// 값이 있다면, 비교하고 삭제 결정
 			if (_table[hash].key.Equals(key)) {
 				_table[hash].DeleteValue();
+				LastRemovedIdx = hash;
 				return true;
 			}
 		} while (true);
@@ -285,7 +251,14 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 			Add(key, default);
 			return default;
 		}
-		set => Add(key, value);
+		set {
+			AddWithoutCollision(key, value, _table);
+			
+			// 로드팩터 검사 후 필요하다면 리사이징
+			if (NeedsResizing) {
+				Resize();
+			}
+		}
 	}
 
 	public ICollection<TKey> Keys {
@@ -315,5 +288,104 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 	public OpenBucket[] Table => _table;
 	public void SetProbingMethod(ProbingMethod method) {
 		ProbingMethod = method;
+	}
+	
+	
+	/// <summary>
+	/// 특정 테이블에 값을 넣는 함수. Add 및 Resizing시 사용
+	/// </summary>
+	/// <param name="key">들어갈 키</param>
+	/// <param name="value">들어갈 값</param>
+	/// <param name="table">넣고자 하는 해시테이블</param>
+	private void AddWithCollision(TKey key, TValue value, OpenBucket[] table) {
+		int tryCount = 0;
+		int firstTombstone = -1;
+		bool addCountFlag = table == _table;
+		
+		do {
+			// 해시값 가져오기
+			int hash = GetHash(key, tryCount++);
+			
+			// 툼스톤 자리를 찾았다면, 일단 넘어가기
+			if (_table[hash].isEmpty && _table[hash].isDeleted) {
+				// 첫 툼스톤 자리만 저장함.
+				if (firstTombstone == -1) {
+					firstTombstone = hash;
+				}
+				continue;
+			}
+			
+			// 빈 자리를 찾았다면, 삽입 후 종료
+			if (table[hash].isEmpty) {
+				// 빈 툼스톤 자리가 있었다면, 거기다 저장
+				if (firstTombstone != -1) {
+					table[firstTombstone].SetValue(key, value);
+					LastAddedIdx = firstTombstone;
+				} else {
+					LastAddedIdx = hash;
+					table[hash].SetValue(key, value);
+				}
+				
+				// 현재 내 테이블에 추가했다면, Count 증가
+				if (addCountFlag) { Count++; }
+				
+				break;
+			}
+			
+			// 이미 존재하는 키였다면, Exception
+			if (!table[hash].isEmpty && table[hash].key.Equals(key)) {
+				throw new ArgumentException($"키 {key}는 이미 존재하는 값입니다.");
+			}
+			
+		} while (true);
+	}
+	
+	/// <summary>
+	/// 특정 테이블에 값을 넣는 함수. Add 및 Resizing시 사용
+	/// </summary>
+	/// <param name="key">들어갈 키</param>
+	/// <param name="value">들어갈 값</param>
+	/// <param name="table">넣고자 하는 해시테이블</param>
+	private void AddWithoutCollision(TKey key, TValue value, OpenBucket[] table) {
+		int tryCount = 0;
+		int firstTombstone = -1;
+		bool addCountFlag = table == _table;
+		
+		do {
+			// 해시값 가져오기
+			int hash = GetHash(key, tryCount++);
+			
+			// 툼스톤 자리를 찾았다면, 일단 넘어가기
+			if (_table[hash].isEmpty && _table[hash].isDeleted) {
+				// 첫 툼스톤 자리만 저장함.
+				if (firstTombstone == -1) {
+					firstTombstone = hash;
+				}
+				continue;
+			}
+			
+			// 빈 자리를 찾았다면, 삽입 후 종료
+			if (table[hash].isEmpty) {
+				// 빈 툼스톤 자리가 있었다면, 거기다 저장
+				if (firstTombstone != -1) {
+					LastAddedIdx = firstTombstone;
+					table[firstTombstone].SetValue(key, value);
+				} else {
+					LastAddedIdx = hash;
+					table[hash].SetValue(key, value);	
+				}
+				
+				// 현재 내 테이블에 추가했다면, Count 증가
+				if (addCountFlag) { Count++; }
+				
+				break;
+			}
+			
+			// 이미 존재하는 키였다면, 값 갱신
+			if (!table[hash].isEmpty && table[hash].key.Equals(key)) {
+				table[hash].SetValue(key, value);
+			}
+			
+		} while (true);
 	}
 }
