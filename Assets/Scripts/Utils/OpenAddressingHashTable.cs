@@ -76,7 +76,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 		private set => _count = value;
 	}
 	
-	private float LoadFactor => Count / Capacity;
+	private float LoadFactor => (float)Count / Capacity;
 	private bool NeedsResizing => LoadFactor >= 0.6f;
 	
 	// 기본 Probing 방식은 Linear
