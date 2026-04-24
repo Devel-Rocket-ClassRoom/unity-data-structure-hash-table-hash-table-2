@@ -38,7 +38,6 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
     }
 
     private const int k_InitialSize = 16;
-    private int _size;
     private int _count;
     private OpenBucket[] _table;
     private ProbingType _probingType;
@@ -71,8 +70,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
     // 현재 내부 배열 크기 (size)
     public int Capacity
     {
-        get => _size;
-        private set => _size = value;
+        get => _table.Length;
     }
 
     // 현재 버킷 내에 몇 개의 값이 존재?
@@ -91,10 +89,10 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
     public OpenAddressingHashTable(ProbingType type)
     {
         _count = 0;
-        _size = k_InitialSize;
-        _table = new OpenBucket[_size];
-        Clear();
+        _table = new OpenBucket[k_InitialSize];
         _probingType = type;
+        
+        Clear();
     }
 
     public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
@@ -130,11 +128,9 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
         Add(item.Key, item.Value);
     }
 
-    private void Resize()
-    {
-        Capacity *= 2;
+    private void Resize() {
         // Capacity가 2배로 증가된 새 해시테이블 생성
-        OpenBucket[] newBucket = new OpenBucket[Capacity];
+        OpenBucket[] newBucket = new OpenBucket[Capacity * 2];
         for (int i = 0; i < newBucket.Length; i++) { newBucket[i].ClearBucket(); }
 
         // 이미 있는 값을 새 테이블로 이전
@@ -178,10 +174,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 
     public void Clear()
     {
-        for (int i = 0; i < Capacity; i++)
-        {
-            _table[i].ClearBucket();
-        }
+        for (int i = 0; i < Capacity; i++) { _table[i].ClearBucket(); }
         Count = 0;
     }
 
@@ -232,10 +225,13 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
             if (_table[hash].key.Equals(key))
             {
                 _table[hash].DeleteValue();
+                Count--;
                 CurrRefIndex = hash;
                 return true;
             }
-        } while (true);
+        } while (tryCount < Capacity);
+        
+        return false;
     }
 
     public bool IsReadOnly => false;
@@ -269,7 +265,10 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
                 value = _table[hash].value;
                 return true;
             }
-        } while (true);
+        } while (tryCount < Capacity);
+        
+        value = default;
+        return false;
     }
 
     public TValue this[TKey key]
@@ -281,9 +280,9 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
                 // 값이 있다면, 그대로 반환
                 return val;
             }
-            // 값이 없다면, 추가하고 반환
-            Add(key, default);
-            return default;
+            
+            // 값이 없다면, Exception
+            throw new KeyNotFoundException();
         }
         set
         {
@@ -305,7 +304,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 
             for (int i = 0; i < _table.Length; i++)
             {
-                if (_table[i].isEmpty) { keys.Add(_table[i].key); }
+                if (!_table[i].isEmpty) { keys.Add(_table[i].key); }
             }
 
             return keys;
@@ -319,7 +318,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
 
             for (int i = 0; i < _table.Length; i++)
             {
-                if (_table[i].isEmpty) { values.Add(_table[i].value); }
+                if (!_table[i].isEmpty) { values.Add(_table[i].value); }
             }
 
             return values;
