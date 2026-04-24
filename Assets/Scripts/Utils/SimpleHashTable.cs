@@ -17,6 +17,8 @@ public class SimpleHashTable<TKey, TValue> : IDictionary<TKey, TValue>
     // 현재 저장된 항목 수
     private int _count;
 
+    public int IndexAccess;
+
     // 기본 _buckets 저장소의 갯수
     private const int DefaultCapacity = 16;
     // 로드 팩터의 임계값 (이 수치를 넘으면 배열의 크기를 늘리기 => Resize() 함수 실행)
@@ -174,7 +176,6 @@ public class SimpleHashTable<TKey, TValue> : IDictionary<TKey, TValue>
         if (arrayIndex < 0) throw new ArgumentOutOfRangeException(nameof(arrayIndex));
         if (array.Length - arrayIndex < _count) throw new ArgumentException("대상 배열이 너무 작습니다.");
 
-
         foreach (Entry e in _buckets)
             if (e.isOccupied)
                 array[arrayIndex++] = new KeyValuePair<TKey, TValue>(e.Key, e.Value);
@@ -249,11 +250,14 @@ public class SimpleHashTable<TKey, TValue> : IDictionary<TKey, TValue>
 
     private void Resize()
     {
+        // 기존 배열을 백업 (old에)
         Entry[] old = _buckets;
 
+        // 2배 크기의 새 배열 생성
         _buckets = new Entry[old.Length * 2];
         _count = 0;
 
+        // 기존 배열에 있던 데이터들을 새 배열에서 위치계산 후 옮기기
         foreach (Entry e in old)
         {
             if (!e.isOccupied)
