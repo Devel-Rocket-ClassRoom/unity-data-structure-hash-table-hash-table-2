@@ -56,13 +56,16 @@ public class HashTableManager : MonoBehaviour
         switch (currentTableType)
         {
             case TableType.OpenAddressing:
+                currentCapacity = 16;
                 openAddressingTable = new OpenAddressingHashTable<int, int>();
                 openAddressingTable.OnResize += SetCurrentCapacity;
                 break;
             case TableType.Simple:
+                currentCapacity = 16;
                 simpleTable = new SimpleHashTable<int, int>();
                 break;
             case TableType.Chaining:
+                currentCapacity = 16;
                 chainingTable = new ChainingHashTable<int, int>();
                 chainingTable.OnReSize += SetCurrentCapacity;
                 break;
