@@ -222,7 +222,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
             if (_table[hash].isEmpty) { continue; }
 
             // 값이 있다면, 비교하고 삭제 결정
-            if (_table[hash].key.Equals(key))
+            if (EqualityComparer<TKey>.Default.Equals(_table[hash].key, key))
             {
                 _table[hash].DeleteValue();
                 Count--;
@@ -260,7 +260,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
             if (_table[hash].isEmpty) { continue; }
 
             // 값이 있다면, 비교하고 반환 여부 결정
-            if (_table[hash].key.Equals(key))
+            if (EqualityComparer<TKey>.Default.Equals(_table[hash].key, key))
             {
                 value = _table[hash].value;
                 return true;
@@ -383,7 +383,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
             }
 
             // 이미 존재하는 키였다면, Exception
-            if (!table[hash].isEmpty && table[hash].key.Equals(key))
+            if (!table[hash].isEmpty && EqualityComparer<TKey>.Default.Equals(table[hash].key, key))
             {
                 throw new ArgumentException($"키 {key}는 이미 존재하는 값입니다.");
             }
@@ -441,7 +441,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
             }
 
             // 이미 존재하는 키였다면, 값 갱신
-            if (!table[hash].isEmpty && table[hash].key.Equals(key))
+            if (!table[hash].isEmpty && EqualityComparer<TKey>.Default.Equals(table[hash].key, key))
             {
                 table[hash].SetValue(key, value);
                 CurrRefIndex = hash;
